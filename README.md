@@ -71,7 +71,7 @@ font = ImageFont.truetype("arial.ttf", 40)
 
 ---
 
-## 🚀 How to Run
+## How to Run
 
 1. Run the script:
 
@@ -82,7 +82,7 @@ python main.py
 2. Input image paths and/or text separated by commas. Example:
 
 ```bash
-👉 image1.jpg, image2.jpg, There was blood on the floor
+image1.jpg, image2.jpg, There was blood on the floor
 ```
 
 3. The system will:
@@ -95,7 +95,7 @@ python main.py
 
 ---
 
-## 📤 Output
+## Output
 
 * `crime_story.mp4` — a narrated video constructed from text+image reasoning
 * `narration.mp3` — audio narration of the crime story
@@ -108,3 +108,4 @@ python main.py
 * **Rohan Raghav** – Full Stack Developer & Machine Learning Enthusiast
 
 Feel free to modify this project to suit forensic, educational, or AI storytelling needs!
+
