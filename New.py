@@ -7,10 +7,10 @@ import os
 import numpy as np
 from moviepy.editor import *
 from gtts import gTTS
-from moviepy.editor import ImageClip
 from PIL import Image, ImageDraw, ImageFont
 from moviepy.editor import ImageClip, AudioFileClip, CompositeVideoClip, ColorClip
 import moviepy.config as mpy_config
+from Videogen import create_video_with_narration
 mpy_config.change_settings({"IMAGEMAGICK_BINARY": r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"})
 
 os.environ["IMAGEMAGICK_PATH"] = r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"
@@ -28,7 +28,8 @@ sbert = SentenceTransformer("all-MiniLM-L6-v2")
 # --- Load Facts ---
 print("📂 Loading facts from Facts.csv...")
 df = pd.read_csv("Facts.csv")
-fact_embeddings = sbert.encode(df['fact'].tolist(), convert_to_tensor=True)
+fact_embeddings = sbert.encode([str(fact) for fact in df['Fact']], convert_to_tensor=True)
+
 
 # --- Generate Caption from Image ---
 def generate_caption(image_path):
@@ -41,37 +42,14 @@ def generate_caption(image_path):
     except Exception as e:
         print(f"❌ Error processing image {image_path}: {e}")
         return None
-
-def create_video_with_narration(text, output_file="output.mp4"):
-    # Generate speech audio
-    tts = gTTS(text)
-    tts.save("narration.mp3")
-
-    # Create background clip (solid color)
-    audio_clip = AudioFileClip("narration.mp3")
-    duration = audio_clip.duration
-
-    # Create a blank image with text using PIL
-    img = Image.new('RGB', (1280, 720), color=(30, 30, 30))
-    draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype("arial.ttf", 40)  # Make sure you have this font or change to a path of .ttf
-    draw.multiline_text((50, 50), text, fill="white", font=font)
-
-    # Convert PIL image to ImageClip
-    img_clip = ImageClip(np.array(img)).set_duration(duration)
-
-    # Composite video with audio
-    video = CompositeVideoClip([img_clip]).set_audio(audio_clip)
-    video.write_videofile(output_file, fps=24)
-
 # --- Match to Most Similar Fact ---
 def find_most_similar_fact(text):
     input_embedding = sbert.encode(text, convert_to_tensor=True)
     similarities = util.cos_sim(input_embedding, fact_embeddings)[0]
     top_idx = int(similarities.topk(k=1)[1][0])
 
-    matched_fact = df['fact'].iloc[top_idx]
-    matched_reasoning = df['reasoning'].iloc[top_idx]
+    matched_fact = df['Fact'].iloc[top_idx]
+    matched_reasoning = df['Reasoning'].iloc[top_idx]
     score = similarities[top_idx].item()
 
     return {
@@ -86,7 +64,7 @@ def process_inputs(inputs):
     results = []
     for item in inputs:
         if os.path.exists(item) and item.lower().endswith((".png", ".jpg", ".jpeg")):
-            print(f"🖼️ Processing image: {item}")
+            print(f"🖼 Processing image: {item}")
             caption = generate_caption(item)
             if caption:
                 fact_info = find_most_similar_fact(caption)
@@ -101,25 +79,25 @@ def process_inputs(inputs):
 
 # --- Print Combined Output ---
 def print_combined_output(results):
-    print("\n📊 Combined Analysis Result:\n")
+    lines = ["📊 Combined Analysis Result:\n"]
     for i, res in enumerate(results, 1):
-        print(f"--- Input #{i} ---")
+        lines.append(f"--- Input #{i} ---")
         if "interpreted_caption" in res:
-            print(f"🖼️ Image Caption   : {res['interpreted_caption']}")
-        print(f"📥 Input           : {res['input']}")
-        print(f"🔍 Matched Fact    : {res['fact']}")
-        print(f"🧠 Reasoning       : {res['reasoning']}")
-        print(f"📈 Similarity Score: {res['score']}\n")
-
+            print(f"🖼 Image Caption   : {res['interpreted_caption']}")
+        lines.append(f"📥 Input           : {res['input']}")
+        lines.append(f"🔍 Matched Fact    : {res['fact']}")
+        lines.append(f"🧠 Reasoning       : {res['reasoning']}")
+        lines.append(f"📈 Similarity Score: {res['score']}\n")
+    return "\n".join(lines)
 # --- Individual Scenario Output ---
 def generate_individual_scenarios(results):
-    print("\n📖 Individual Scenarios:\n")
+    lines = ["📖 Individual Scenarios:\n"]
     for i, res in enumerate(results, 1):
         if res["score"] >= 0.5:
-            print(f"Scenario {i}: {res['input']} suggests that {res['reasoning'].lower()}.")
+            lines.append(f"Scenario {i}: {res['input']} suggests that {res['reasoning'].lower()}.")
         else:
-            print(f"Scenario {i}: Observation '{res['input']}' noted, but no strong inference available.")
-
+            lines.append(f"Scenario {i}: Observation '{res['input']}' noted, but no strong inference available.")
+    return "\n".join(lines)
 # --- Create video from narrative text ---
 def narrative_to_text(results):
     story_parts = {
@@ -130,9 +108,9 @@ def narrative_to_text(results):
     }
 
     keyword_mapping = {
-        "before": ["stationary", "waiting", "idle", "standing", "sitting", "asleep", "corner", "pillar","leaning", "ambush", "stalking", "approach", "shadow", "concealed", "observed", "positioned","footprints", "lured", "planned", "targeted", "near door", "unaware", "routine", "browsing","monitoring", "distraction", "unauthorized access", "preparation"],
-        "during": ["gunshot", "stab", "shooting", "attack", "assault", "blunt force", "hammer", "weapon", "knife","high-velocity", "projectile", "entry wound", "exit wound", "impact", "blow", "strike", "blood spatter", "arterial spray", "struggle", "fight", "scream", "witnessed", "collision","aggression", "explosion", "burn", "slash", "multiple wounds", "gunfire", "throat slit"],        
-        "after": ["glass", "escape", "flee", "ran", "broken", "window", "shattered", "bullet hole", "trail"],
+        "before": ["stationary", "waiting", "idle", "standing", "sitting", "asleep", "corner", "pillar","leaning", "ambush", "stalking", "approach", "shadow", "concealed", "observed", "positioned", "footprints", "lured", "planned", "targeted", "unaware", "routine", "browsing", "monitoring", "distraction", "unauthorized access", "preparation"],
+        "during": ["gunshot", "stab", "shooting", "attack", "assault", "blunt force", "hammer", "weapon", "knife", "high-velocity", "projectile", "entry wound", "exit wound", "impact", "blow", "strike", "blood spatter", "arterial spray", "struggle", "fight", "scream", "witnessed", "collision", "aggression", "explosion", "burn", "slash", "multiple wounds", "gunfire", "throat slit"],        
+        "after": ["glass", "escape", "flee", "ran", "broken", "shattered", "bullet hole", "trail"],
     }
 
     for res in results:
@@ -167,20 +145,18 @@ def narrative_to_text(results):
 
 # --- Updated generate_crime_story function ---
 def generate_crime_story(results):
-    print("\n🕵️ Narrative: How the Crime Likely Happened\n")
+    lines=["\n🕵 Narrative: How the Crime Likely Happened\n"]
 
     narrative_text = narrative_to_text(results)
-    print(narrative_text + "\n")
-
+    lines.append(narrative_text + "\n")
     # After printing narrative, create video from this text narration
     print("🎬 Generating video narration from the crime story...")
-    create_video_with_narration(narrative_text, output_file="crime_story.mp4")
-    print("✅ Video saved as 'crime_story.mp4'\n")
+    return "\n\n".join(lines)
 
 
 # --- Unified Scenario Generation ---
 def generate_unified_scenario(results):
-    print("\n🧩 Unified Scenario Based on All Inputs:\n")
+    lines = ["🧩 Unified Scenario Based on All Inputs:\n"]
     scenario_parts = []
     observations = []
 
@@ -193,24 +169,35 @@ def generate_unified_scenario(results):
 
     if scenario_parts:
         for part in scenario_parts:
-            print("🔹", part)
+            lines.append(f"🔹 {part}")
     if observations:
-        print("\n📌 Additional Observations:")
+        lines.append("\n📌 Additional Observations:")
         for obs in observations:
-            print("🔸", obs)
+            lines.append(f"🔸 {obs}")
+
+    return "\n".join(lines)
+
 
 # --- Entry Point ---
-if __name__ == "__main__":
-    print("\n🧠 Multi-modal Interpreter (Text + Image)\n")
-    print("Enter multiple inputs (text or image paths) separated by commas:")
-    user_input = input("👉 ").strip()
-
-    inputs = [i.strip() for i in user_input.split(",") if i.strip()]
+def build_narrative(inputs, saved_files):
     if not inputs:
         print("❌ No valid input provided.")
-    else:
-        results = process_inputs(inputs)
-        print_combined_output(results)
-        generate_individual_scenarios(results)
-        generate_unified_scenario(results)
-        generate_crime_story(results) 
+        return [], "No input"
+
+    results = process_inputs(inputs)
+
+    # Build all parts as strings
+    combined_output_str = print_combined_output(results)
+    individual_scenarios_str = generate_individual_scenarios(results)
+    unified_scenario_str = generate_unified_scenario(results)
+
+    # Generate simple narrative text for video narration (or you can customize)
+    short_narrative_text = narrative_to_text(results)
+
+    # Combine all detailed parts into one big report
+    full_report = "\n\n".join([combined_output_str, individual_scenarios_str, unified_scenario_str,short_narrative_text])
+
+    # Save video using short narrative text
+    print("🎬 Generating video narration from the crime story...")
+    video_path=create_video_with_narration(short_narrative_text)
+    return results, full_report, video_path
