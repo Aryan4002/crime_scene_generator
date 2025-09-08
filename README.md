@@ -1,111 +1,91 @@
+🧠 Multi-Modal Crime Scene Interpreter
 
-# 🧠 Multi-Modal Crime Scene Interpreter
+This project is a multi-modal system designed to interpret crime-related images and textual observations to generate contextual insights, similarity-based reasoning, and a narrated video summarizing the incident. It leverages image captioning (BLIP-2), semantic similarity (SBERT), and TTS + video generation.
 
-This project is a multi-modal system designed to interpret crime-related images and textual observations to generate contextual insights, similarity-based reasoning, and a narrated video summarizing the incident. It uses image captioning (BLIP-2), semantic similarity (SBERT), and TTS + video generation.
+📁 Project Structure
+├── main.py                  # Main script to run the interpreter  
+├── Facts.csv                # CSV file containing factual statements and reasoning  
+├── crime_story.mp4          # Output video narration (generated)  
+├── narration.mp3            # Audio file generated from narrative  
+└── README.md                # This file  
 
----
+✅ Prerequisites
+📦 Python Libraries
 
-## 📁 Project Structure
+Install required Python packages:
 
-```
-├── main.py                  # Main script to run the interpreter
-├── Facts.csv                # CSV file containing factual statements and reasoning
-├── crime_story.mp4          # Output video narration (generated)
-├── narration.mp3            # Audio file generated from narrative
-└── README.md                # This file
-```
-
----
-
-## ✅ Prerequisites
-
-### 📦 Python Libraries
-
-Install the following Python packages:
-
-```bash
 pip install transformers sentence-transformers pandas torch gtts moviepy pillow
-```
 
-### 🧠 Models Required
+🧠 Models Used
 
-* `Salesforce/blip2-opt-2.7b` via Hugging Face Transformers
-* `all-MiniLM-L6-v2` via Sentence Transformers
+Salesforce/blip2-opt-2.7b via Hugging Face Transformers
 
-These will be downloaded automatically the first time you run the script.
+all-MiniLM-L6-v2 via Sentence Transformers
 
-### 🧾 CSV File
+Models will be automatically downloaded when the script is run for the first time.
 
-You must provide a `Facts.csv` file with the following columns:
+🧾 Facts.csv
 
-* `fact`: factual observation
-* `reasoning`: reasoning behind the fact
+Ensure a Facts.csv file with the following columns:
 
-### 📸 Images
+fact: factual observation
 
-Ensure images are in `.jpg`, `.jpeg`, or `.png` formats.
+reasoning: reasoning behind the fact
 
----
+📸 Image Inputs
 
-## 🧰 Dependencies
+Use .jpg, .jpeg, or .png image formats.
 
-### 📍 ImageMagick
+🧰 Dependencies
+📍 ImageMagick
 
-* Download & install [ImageMagick](https://imagemagick.org/index.php)
-* Ensure the executable path is correct in:
+Install from https://imagemagick.org
+.
+Ensure the correct path in the script:
 
-```python
 mpy_config.change_settings({"IMAGEMAGICK_BINARY": r"C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\magick.exe"})
 os.environ["IMAGEMAGICK_PATH"] = r"C:\\Program Files\\ImageMagick-7.1.1-Q16-HDRI\\magick.exe"
-```
 
-Change it based on your system if necessary.
 
-### 🔤 Fonts
+Adjust path based on your system configuration.
 
-Ensure `arial.ttf` or any .ttf font file is accessible for PIL. Modify this line if needed:
+🔤 Font Configuration
 
-```python
+Ensure arial.ttf or any .ttf font is accessible in your system for PIL usage. Example:
+
 font = ImageFont.truetype("arial.ttf", 40)
-```
 
----
 
-## How to Run
+Modify path if needed.
 
-1. Run the script:
+▶️ How to Run
 
-```bash
+Execute the main script:
+
 python main.py
-```
 
-2. Input image paths and/or text separated by commas. Example:
 
-```bash
+Input image paths and/or text separated by commas. Example:
+
 image1.jpg, image2.jpg, There was blood on the floor
-```
 
-3. The system will:
 
-   * Caption images
-   * Find the most similar fact and reasoning
-   * Print the analysis
-   * Generate a crime story narrative
-   * Produce a narrated video: `crime_story.mp4`
+The system will:
 
----
+Caption images
 
-## Output
+Match facts & reasoning
 
-* `crime_story.mp4` — a narrated video constructed from text+image reasoning
-* `narration.mp3` — audio narration of the crime story
-* CLI outputs for each step
+Print analysis
 
----
+Generate a narrative story
 
-## 🧠 Authors
+Create a narrated video: crime_story.mp4
 
-* **Rohan Raghav** – Full Stack Developer & Machine Learning Enthusiast
+🎯 Output
 
-Feel free to modify this project to suit forensic, educational, or AI storytelling needs!
+crime_story.mp4: Narrated video summarizing the crime
 
+narration.mp3: Audio narration file
+
+Command-line output for each process step
